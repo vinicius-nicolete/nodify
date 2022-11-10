@@ -31,6 +31,31 @@ namespace Nodify
         /// </summary>
         Edge,
     }
+    /// <summary>
+    /// The direction in which a Arrow Head is oriented.
+    /// </summary>
+    public enum ArrowHeadEnds
+    {
+        /// <summary>
+        /// No Arrow Head Ends applied.
+        /// </summary>
+        None,
+
+        /// <summary>
+        /// The Arrow Head aplied in the start of the point.
+        /// </summary>
+        Start,
+
+        /// <summary>
+        /// The Arrow Head aplied in the end of the point.
+        /// </summary>
+        End,
+
+        /// <summary>
+        /// The Arrow Head aplied in the both of the point.
+        /// </summary>
+        Both,
+    }
 
     /// <summary>
     /// The direction in which a connection is oriented.
@@ -63,6 +88,7 @@ namespace Nodify
         public static readonly DependencyProperty DirectionProperty = DependencyProperty.Register(nameof(Direction), typeof(ConnectionDirection), typeof(BaseConnection), new FrameworkPropertyMetadata(default(ConnectionDirection), FrameworkPropertyMetadataOptions.AffectsRender));
         public static readonly DependencyProperty SpacingProperty = DependencyProperty.Register(nameof(Spacing), typeof(double), typeof(BaseConnection), new FrameworkPropertyMetadata(BoxValue.Double0, FrameworkPropertyMetadataOptions.AffectsRender));
         public static readonly DependencyProperty ArrowSizeProperty = DependencyProperty.Register(nameof(ArrowSize), typeof(Size), typeof(BaseConnection), new FrameworkPropertyMetadata(BoxValue.ArrowSize, FrameworkPropertyMetadataOptions.AffectsRender));
+        public static readonly DependencyProperty ArrowHeadProperty = DependencyProperty.Register(nameof(ArrowHead), typeof(ArrowHeadEnds), typeof(BaseConnection), new FrameworkPropertyMetadata(default(ArrowHeadEnds), FrameworkPropertyMetadataOptions.AffectsRender));
         public static readonly DependencyProperty SplitCommandProperty = DependencyProperty.Register(nameof(SplitCommand), typeof(ICommand), typeof(BaseConnection));
         public static readonly DependencyProperty DisconnectCommandProperty = Connector.DisconnectCommandProperty.AddOwner(typeof(BaseConnection));
 
@@ -136,6 +162,14 @@ namespace Nodify
         {
             get => (Size)GetValue(ArrowSizeProperty);
             set => SetValue(ArrowSizeProperty, value);
+        }
+        /// <summary>
+        /// Gets or sets the orientation of the arrow head.
+        /// </summary>
+        public ArrowHeadEnds ArrowHead
+        {
+            get => (ArrowHeadEnds)GetValue(ArrowHeadProperty);
+            set => SetValue(ArrowHeadProperty, value);
         }
 
         /// <summary>
@@ -217,8 +251,26 @@ namespace Nodify
 
         protected virtual void DrawArrowGeometry(StreamGeometryContext context, Point source, Point target)
         {
+            switch (ArrowHead)
+            {
+                case ArrowHeadEnds.None:
+                    break;
+                case ArrowHeadEnds.Start:
+                    Direction = ConnectionDirection.Forward;
+                    break;
+                case ArrowHeadEnds.End:
+                    Direction = ConnectionDirection.Backward;
+                    break;
+                case ArrowHeadEnds.Both:
+                    (Point fromBoth, Point toBoth) = GetArrowHeadPoints(target, source);
+                    context.BeginFigure(target, true, true);
+                    context.LineTo(fromBoth, true, true);
+                    context.LineTo(toBoth, true, true);
+                    break;
+                default:
+                    break;
+            }
             (Point from, Point to) = GetArrowHeadPoints(source, target);
-
             context.BeginFigure(target, true, true);
             context.LineTo(from, true, true);
             context.LineTo(to, true, true);
